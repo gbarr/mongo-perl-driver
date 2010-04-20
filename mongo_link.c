@@ -61,7 +61,7 @@ int perl_mongo_connect(char *host, int port, int timeout) {
 
   // create socket
   if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-    croak("couldn't create socket: %s\n", strerror(errno));
+    die("couldn't create socket: %s\n", strerror(errno));
     return -1;
   }
 #endif
@@ -193,7 +193,7 @@ int mongo_link_hear(SV *cursor_sv) {
 
   if (!check_connection(link_sv)) {
     SvREFCNT_dec(link_sv);
-    croak("can't get db response, not connected");
+    die("can't get db response, not connected");
     return 0;
   }
   
@@ -215,7 +215,7 @@ int mongo_link_hear(SV *cursor_sv) {
     select(sock+1, &readfds, NULL, NULL, &t);
 
     if (!FD_ISSET(sock, &readfds)) {
-      croak("recv timed out");
+      die("recv timed out");
       return 0;
     }
   }
@@ -237,7 +237,7 @@ int mongo_link_hear(SV *cursor_sv) {
 
     if (!check_connection(link_sv)) {
       SvREFCNT_dec(link_sv);
-      croak("bad response length: %d, max: %d, did the db assert?\n", cursor->header.length, MAX_RESPONSE_LEN);
+      die("bad response length: %d, max: %d, did the db assert?\n", cursor->header.length, MAX_RESPONSE_LEN);
       return 0;
     }
   }
@@ -276,12 +276,12 @@ int mongo_link_hear(SV *cursor_sv) {
   cursor->buf.pos = cursor->buf.start;
 
   if (mongo_link_reader(sock, cursor->buf.pos, cursor->header.length) == -1) {
-#ifdef WIN32
-    croak("WSA error getting database response: %d\n", WSAGetLastError());
-#else
-    croak("error getting database response: %s\n", strerror(errno));
-#endif 
     SvREFCNT_dec(link_sv);
+#ifdef WIN32
+    die("WSA error getting database response: %d\n", WSAGetLastError());
+#else
+    die("error getting database response: %s\n", strerror(errno));
+#endif 
     return 0;
   }
   
@@ -379,5 +379,5 @@ int perl_mongo_master(SV *link_sv) {
     return link->server[link->master]->socket;
   }
 
-  croak("couldn't find master");
+  die("couldn't find master");
 }
